@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}
+Profil tahrirlash
+{% endblock title %}
+{%block content %}
+<div class="container border border-dark rounded rounded-4 p-4 my-5 col-6">
+        <h1>Profil tahrirlash</h1>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token  %}
+            {{ form | crispy}}
+            <button class="btn btn-secondary" >Saqlash</button>
+            <a class="btn btn-outline-secondary" href="{% url 'profile_detail' %}">Orqaga</a>
+        </form>
+</div>
+{%endblock content %}

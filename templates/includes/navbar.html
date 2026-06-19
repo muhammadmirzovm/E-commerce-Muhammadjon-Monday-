@@ -20,9 +20,9 @@
         </li>
       </ul>
       {% if user.is_authenticated %}
-      <span style="width: 30px; height:30px;" class="d-flex align-items-center justify-content-center bg-dark text-white rounded rounded-circle me-1">
-        {{ user.username|slice:1|title }}
-      </span>
+
+        <a style="width: 30px; height:30px;" class="text-decoration-none d-flex align-items-center justify-content-center bg-dark text-white rounded rounded-circle me-1"  href="{% url 'profile_detail' %}">{{ user.username|slice:1|title }}</a>
+
       <form method="post" action="{% url 'logout' %}">
         {% csrf_token %}
         <button class="btn btn-dark btn-sm"><i class="bi bi-box-arrow-right"></i></button>
