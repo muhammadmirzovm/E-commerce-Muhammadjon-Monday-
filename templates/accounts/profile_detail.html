@@ -35,6 +35,7 @@ Profile -> {{ request.user.username }}
                 <span class="text-secondary">Manzil</span>
                 <span class="fw-medium">{{ user.address }}</span>
             </div>
+              <a class="btn btn-dark" href="{% url 'password_change' %}">Parolni o'zgartirish <i class="bi bi-key-fill"></i></a>
         </div>
     </div>
 </div>
