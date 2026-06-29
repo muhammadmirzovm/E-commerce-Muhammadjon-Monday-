@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Cart{% endblock %}
+{% block content %}
+<div class="container border rounded rounded-4 p-4 my-5 bg-light">
+    <h1 class="h4 mb-3">Savatcha</h1>
+    <span class="badge text-bg-secondary my-1">Yangilangan: {{ cart.updated_at |date:"d.m.Y"}}</span>
+<div class="card border rounded-4 shadow-sm">
+ <div class="card-body">
+   {% if items.count == 0 %}
+     <p class="text-muted mb-0">Savatcha bo‘sh.</p>
+   {% else %}
+     <div class="table-responsive">
+       <table class="table align-middle">
+         <thead>
+           <tr><th>Mahsulot</th><th>Narxi</th><th style="width:240px;">Soni</th><th>Umumiy</th><th style="width:120px;"></th> <th>Qo'shilgan vaqt</th> </tr>
+         </thead>
+         <tbody>
+           {% for item in items %}
+             <tr>
+               <td class="fw-semibold">{{ item.product.name }}</td>
+               <td>{{ item.unit_price }}</td>
+               <td>
+                 <form method="post" action="{% url 'cart_update' item.product.id %}" class="d-flex gap-2">
+                   {% csrf_token %}
+                   <input disabled type="number" name="qty" min="1" value="{{ item.qty }}" class="form-control">
+                   <button class="btn btn-outline-dark btn-sm">Update</button>
+                 </form>
+               </td>
+               <td class="fw-semibold">{{ item.line_total }}</td>
+               <td>
+                 <form method="post" action="{% url 'cart_remove' item.product.id %}">
+                   {% csrf_token %}
+                   <button class="btn btn-outline-danger btn-sm w-100">Remove</button>
+                 </form>
+               </td>
+               <td>
+                {{item.created_at | date:"d.m.Y H:i" }}
+               </td>
+             </tr>
+           {% endfor %}
+         </tbody>
+       </table>
+     </div>
+     <hr>
+     <hr>
+     <div class="row justify-content-end">
+       <div class="col-md-5">
+         <ul class="list-group">
+           <li class="list-group-item d-flex justify-content-between">
+             <span>Subtotal</span><strong>{{ subtotal }}</strong>
+           </li>
+           <li class="list-group-item d-flex justify-content-between">
+             <span>Delivery</span><strong>{{ delivery }}</strong>
+           </li>
+           <li class="list-group-item d-flex justify-content-between">
+             <span>Total</span><strong>{{ total }}</strong>
+           </li>
+         </ul>
+         <div class="d-flex gap-2 mt-3">
+           <a class="btn btn-outline-secondary w-100" href="{% url 'product_list' %}">Continue</a>
+           <button class="btn btn-dark w-100" disabled>Checkout (9-dars)</button>
+         </div>
+       </div>
+     </div>
+   {% endif %}
+ </div>
+</div>
+</div>
+{% endblock %}
