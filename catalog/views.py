@@ -12,27 +12,20 @@ class ProductListView(ListView):
    paginate_by = 4
 
    def get_queryset(self):
-       qs = (Product.objects.filter(is_active=True).select_related("category", "seller")
+       qs = (Product.objects.filter(is_active=True,stock__gt = 0).select_related("category", "seller")
            .order_by("-created_at"))
-       # 1) Search: q
        q = self.request.GET.get("q", "").strip()
        if q:
            qs = qs.filter(
                Q(name__icontains=q) |
                Q(short_description__icontains=q) |
                Q(description__icontains=q))
-       # 2) Category filter: category=slug
        cat_slug = self.request.GET.get("category", "").strip()
        if cat_slug:
            cat = Category.objects.filter(slug=cat_slug).first()
            if cat:
-               # (Beginner-friendly) faqat shu category
-               # qs = qs.filter(category=cat)
-
-               # (Yaxshiroq) shu category + uning bolalari (subcategory)
                child_ids = list(cat.children.values_list("id", flat=True))
                qs = qs.filter(category_id__in=[cat.id] + child_ids)
-       # 3) Price range: min_price / max_price
        min_price = self.request.GET.get("min_price", "").strip()
        max_price = self.request.GET.get("max_price", "").strip()
        try:
