@@ -7,7 +7,6 @@
  <div class="col-lg-6">
    <div class="card shadow-sm border rounded-4">
      <div class="card-body">
-       <div><strong>Status:</strong> {{ order.status }}</div>
        <div><strong>Name:</strong> {{ order.full_name }}</div>
        <div><strong>Phone:</strong> {{ order.phone }}</div>
        <div><strong>Address:</strong> {{ order.address }}</div>
@@ -20,7 +19,7 @@
        {% for item in order.items.all %}
          <div class="d-flex justify-content-between"><div>
              <div class="fw-semibold">{{ item.product.name }}</div>
-             <div class="text-muted small">Qty: {{ item.qty }} • Seller: {{ item.seller.username }}</div></div>
+             <div class="text-muted small">Qty: {{ item.qty }} • Seller: {{ item.seller.username }} • Status: {{ item.status }} </div></div>
            <div class="fw-semibold">{{ item.unit_price }}</div></div><hr>
        {% endfor %}
      </div></div> </div></div>

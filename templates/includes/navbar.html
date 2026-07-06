@@ -28,6 +28,14 @@
 </a>
          
         </li>
+        <li class="nav-item">
+          {% if request.user.is_authenticated %}
+ {% if request.user.role == "SELLER" %}
+   <a class="nav-link" href="{% url 'seller_order_items' %}">Seller Orders</a>
+ {% endif %}
+{% endif %}
+
+        </li>
       </ul>
       {% if user.is_authenticated %}
 
