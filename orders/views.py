@@ -69,7 +69,6 @@ class MyOrdersListView(LoginRequiredMixin, ListView):
    def get_queryset(self):
        return Order.objects.filter(user=self.request.user).order_by("-created_at")
 
-
 class OrderDetailView(LoginRequiredMixin, DetailView):
    model = Order
    template_name = "orders/order_detail.html"
@@ -77,7 +76,6 @@ class OrderDetailView(LoginRequiredMixin, DetailView):
 
    def get_queryset(self):
        return Order.objects.filter(user=self.request.user)  # boshqa user orderini ocholmaydi
-
 
 class SellerOrderListView(SellerRequiredMixin, ListView):
    model = Order
@@ -87,7 +85,6 @@ class SellerOrderListView(SellerRequiredMixin, ListView):
    def get_queryset(self):
        # Seller hamma orderlarni ko‘radi (yangilari tepada)
        return Order.objects.select_related("user").order_by("-created_at")
-
 
 class SellerOrderStatusUpdateView(SellerRequiredMixin, UpdateView):
    model = OrderItem

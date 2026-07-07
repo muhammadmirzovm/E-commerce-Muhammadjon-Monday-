@@ -1,9 +1,16 @@
-from django.shortcuts import render
-from django.views.generic import ListView , DetailView
-from .models import Product, Category
+from django.views.generic import ListView , DetailView, CreateView, DeleteView, UpdateView
 from decimal import Decimal, InvalidOperation
 from django.db.models import Q
 from django.contrib import messages
+from .models import Product, Category, Review
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .forms import ReviewForm, ProductForm
+from .utils import can_review
+from django.db.models import Avg, Count
+from .mixins import SellerRequiredMixin, OwnerRequiredMixin
+from django.urls import reverse_lazy
+
 
 class ProductListView(ListView):
    model = Product
@@ -67,4 +74,90 @@ class ProductDetailView(DetailView):
     model = Product
     template_name = "catalog/product_detail.html"
     context_object_name = "product"
-    
+
+    def get_context_data(self, **kwargs):
+       ctx = super().get_context_data(**kwargs)
+       product = self.object  # self.object = hozirgi product (DetailView topib bergan)
+       # 1) Reviewlar ro'yxati: eng yangisi tepada
+       # select_related("user") -> r.user.username ishlaganda DB'ga qayta-qayta urilmasin
+       ctx["reviews"] = product.reviews.select_related("user").order_by("-created_at")
+       # 2) O'rtacha ratingni hisoblash (Avg)
+       # aggregate(...) natijani dict qilib qaytaradi, masalan {"a": 4.5}
+       # ["a"] -> o'rtacha qiymatni olamiz
+       # agar review bo'lmasa None bo'ladi, shuning uchun "or 0" qo'yamiz
+       ctx["avg_rating"] = product.reviews.aggregate(a=Avg("rating"))["a"] or 0
+       # 3) Reviewlar soni (Count)
+       # aggregate(...) -> {"c": 12} kabi dict qaytaradi
+       ctx["reviews_count"] = product.reviews.aggregate(c=Count("id"))["c"]
+       # 4) Bu user review yozishi mumkinmi? (sotib olgan + delivered)
+       ctx["can_review"] = can_review(self.request.user, product)
+       # 5) User oldin review yozganmi? (1 marta yozsin)
+       # exists() -> tez tekshiradi: bor/yo'q (True/False)
+       if self.request.user.is_authenticated:
+           ctx["already_reviewed"] = product.reviews.filter(user=self.request.user).exists()
+       else:
+           ctx["already_reviewed"] = False
+       return ctx
+
+class SellerProductListView(SellerRequiredMixin, ListView):
+   model = Product
+   template_name = "catalog/seller/product_list.html"
+   context_object_name = "products"
+   paginate_by = 10
+
+   def get_queryset(self):
+       # Faqat hozirgi seller’ning mahsulotlarini chiqaramiz
+       return Product.objects.filter(seller=self.request.user).order_by("-created_at")
+class SellerProductCreateView(SellerRequiredMixin, CreateView):
+   model = Product
+   form_class = ProductForm
+   template_name = "catalog/seller/product_form.html"
+   success_url = reverse_lazy("seller_products")
+   def form_valid(self, form):
+       # seller’ni user tanlamaydi — avtomatik current user bo‘ladi
+       form.instance.seller = self.request.user
+       messages.success(self.request, "Mahsulot qo‘shildi ✅")
+       return super().form_valid(form)
+
+class SellerProductUpdateView(SellerRequiredMixin, OwnerRequiredMixin, UpdateView):
+   model = Product
+   form_class = ProductForm
+   template_name = "catalog/seller/product_form.html"
+   success_url = reverse_lazy("seller_products")
+
+   def form_valid(self, form):
+       messages.success(self.request, "Mahsulot yangilandi ✅")
+       return super().form_valid(form)
+
+class SellerProductDeleteView(SellerRequiredMixin, OwnerRequiredMixin, DeleteView):
+   model = Product
+   template_name = "catalog/seller/product_confirm_delete.html"
+   success_url = reverse_lazy("seller_products")
+
+   def form_valid(self, form):
+       messages.success(self.request, "Mahsulot o‘chirildi ✅")
+       return super().form_valid(form)
+
+class ReviewCreateView(LoginRequiredMixin, CreateView):
+   model = Review
+   form_class = ReviewForm
+   template_name = "catalog/review_form.html"
+   def dispatch(self, request, *args, **kwargs):
+       # dispatch = view ishga tushishidan oldin tekshiruv qilish uchun qulay joy
+       self.product = get_object_or_404(Product, slug=kwargs["slug"], is_active=True)
+       # 1) sotib olganmi + delivered bo'lganmi?
+       if not can_review(request.user, self.product):
+           messages.error(request, "Review yozish uchun avval sotib olib, qabul qilishingiz kerak ❌")
+           return redirect("product_detail", slug=self.product.slug)
+       # 2) oldin review yozganmi? (duplicate bo'lmasin)
+       if Review.objects.filter(product=self.product, user=request.user).exists():
+           messages.info(request, "Siz bu mahsulotga allaqachon review yozgansiz ✅")
+           return redirect("product_detail", slug=self.product.slug)
+       return super().dispatch(request, *args, **kwargs)
+   def form_valid(self, form):
+       review = form.save(commit=False)  # hozircha DB ga yozmaymiz
+       review.product = self.product     # qaysi productga yozdi
+       review.user = self.request.user   # kim yozdi
+       review.save()                     # endi DB ga saqlaymiz
+       messages.success(self.request, "Review saqlandi ✅")
+       return redirect("product_detail", slug=self.product.slug)

@@ -36,6 +36,22 @@
 {% endif %}
 
         </li>
+        <li class="nav-item">
+          {% if request.user.is_authenticated and request.user.role == "SELLER" %}
+<a class="nav-link" href="{% url 'seller_products' %}">
+My Products
+</a>
+{%endif %}
+</li>
+        <li class="nav-item">
+          {% if request.user.is_authenticated and request.user.role == "BUYER" %}
+<a class="nav-link" href="{% url 'my_orders' %}">
+My orders
+</a>
+{% endif %}
+
+
+        </li>
       </ul>
       {% if user.is_authenticated %}
 

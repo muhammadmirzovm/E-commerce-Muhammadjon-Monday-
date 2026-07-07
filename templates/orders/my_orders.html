@@ -10,7 +10,7 @@
        {% for o in orders %}
          <a class="list-group-item list-group-item-action d-flex justify-content-between"
             href="{% url 'order_detail' o.id %}">
-           <span>#{{ o.id }} — {{ o.status }}</span>
+           <span>#{{ o.id }}</span>
            <span class="text-muted small">{{ o.created_at }}</span></a>
        {% endfor %}</ul>
    {% else %}
